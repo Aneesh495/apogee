@@ -1,0 +1,15 @@
+_build/
+*.beam
+.rebar3/
+rebar3.crashdump
+*.dump
+erl_crash.dump
+priv/*.so
+priv/*.dylib
+bin/
+c_src/apogee_packet_gen
+ts/node_modules/
+ts/dist/
+__pycache__/
+*.pyc
+.DS_Store
