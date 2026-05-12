@@ -19,7 +19,15 @@ iss_tle_parse_test() ->
     ?assert(abs(Tle#tle.inclination * ?RAD_TO_DEG - 51.6416) < 1.0e-4),
     ?assert(abs(Tle#tle.raan * ?RAD_TO_DEG - 247.4627) < 1.0e-4),
     ?assert(abs(Tle#tle.eccentricity - 0.0006703) < 1.0e-7),
-    ?assert(abs(Tle#tle.bstar - (-0.11606e-4)) < 1.0e-9).
+    ?assert(abs(Tle#tle.bstar - (-0.11606e-4)) < 1.0e-9),
+    SemiMajor = apogee_tle:semi_major_axis(Tle),
+    ?assert(SemiMajor > 6700.0 andalso SemiMajor < 6850.0),
+    PeriodS = apogee_tle:orbital_period_s(Tle),
+    ?assert(PeriodS > 5400.0 andalso PeriodS < 5600.0),
+    PerigeeAlt = apogee_tle:perigee_altitude_km(Tle),
+    ApogeeAlt = apogee_tle:apogee_altitude_km(Tle),
+    ?assert(PerigeeAlt > 330.0 andalso PerigeeAlt < 430.0),
+    ?assert(ApogeeAlt > 340.0 andalso ApogeeAlt < 440.0).
 
 invalid_checksum_test() ->
     %% Alter last character to corrupt checksum

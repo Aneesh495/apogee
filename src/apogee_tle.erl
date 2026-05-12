@@ -16,7 +16,11 @@
     verify_checksum/1,
     epoch_to_jd/2,
     jd_to_epoch/1,
-    format/1
+    format/1,
+    semi_major_axis/1,
+    orbital_period_s/1,
+    perigee_altitude_km/1,
+    apogee_altitude_km/1
 ]).
 
 -spec parse(binary() | string()) -> {ok, #tle{}} | {error, term()}.
@@ -186,6 +190,25 @@ jd_to_epoch(JD) ->
     Jan1JD = apogee_time:datetime_to_jd(Year, 1, 1, 0, 0, 0.0),
     DayOfYear = (JD - Jan1JD) + 1.0,
     {Year, DayOfYear}.
+
+-spec semi_major_axis(#tle{}) -> float().
+semi_major_axis(#tle{mean_motion = N}) when N > 0.0 ->
+    %% Kepler's third law: a = (mu / n^2)^(1/3)
+    math:pow(?EARTH_MU / (N * N), 1.0 / 3.0).
+
+-spec orbital_period_s(#tle{}) -> float().
+orbital_period_s(#tle{mean_motion = N}) when N > 0.0 ->
+    ?TWO_PI / N.
+
+-spec perigee_altitude_km(#tle{}) -> float().
+perigee_altitude_km(#tle{eccentricity = Ecc} = Tle) ->
+    A = semi_major_axis(Tle),
+    (A * (1.0 - Ecc)) - ?EARTH_RADIUS_KM.
+
+-spec apogee_altitude_km(#tle{}) -> float().
+apogee_altitude_km(#tle{eccentricity = Ecc} = Tle) ->
+    A = semi_major_axis(Tle),
+    (A * (1.0 + Ecc)) - ?EARTH_RADIUS_KM.
 
 -spec format(#tle{}) -> {string(), string(), string()}.
 format(#tle{} = Tle) ->
