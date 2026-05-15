@@ -155,25 +155,34 @@ propagate_minutes(#sgp4_model{} = M, Tsince) ->
     E = max(1.0e-6, min(0.999, M#sgp4_model.e0 - M#sgp4_model.bstar * M#sgp4_model.c4 * Tsince)),
     Incl = M#sgp4_model.i0,
 
+    %% Long-period perturbations from J3 harmonic (Lyddane formulation)
+    SinOmega = math:sin(Omegadf),
+    CosOmega = math:cos(Omegadf),
+    J3J2Ratio = ?EARTH_J3 / ?EARTH_J2,
+    Axn = E * CosOmega,
+    Ayn = E * SinOmega - 0.5 * J3J2Ratio * (?EARTH_RADIUS_KM / A) * math:sin(Incl),
+    ELong = math:sqrt(max(1.0e-12, Axn * Axn + Ayn * Ayn)),
+    OmegaLong = math:atan2(Ayn, Axn),
+
     %% Solve Kepler equation for eccentric anomaly E
-    EAnom = solve_kepler(MpMod, E),
+    EAnom = solve_kepler(MpMod, ELong),
     CosE = math:cos(EAnom),
     SinE = math:sin(EAnom),
 
     %% True anomaly and orbital radius
-    SinNu = (math:sqrt(1.0 - E * E) * SinE) / (1.0 - E * CosE),
-    CosNu = (CosE - E) / (1.0 - E * CosE),
+    SinNu = (math:sqrt(max(1.0e-12, 1.0 - ELong * ELong)) * SinE) / (1.0 - ELong * CosE),
+    CosNu = (CosE - ELong) / (1.0 - ELong * CosE),
     Nu = math:atan2(SinNu, CosNu),
     
     %% Radius in orbital plane
-    R = A * (1.0 - E * CosE),
+    R = A * (1.0 - ELong * CosE),
     
     %% Specific angular momentum and velocity magnitude components
-    Rdot = (math:sqrt(?EARTH_MU * A) / R) * E * SinE,
-    Rfdot = math:sqrt(?EARTH_MU * A * (1.0 - E * E)) / R,
+    Rdot = (math:sqrt(?EARTH_MU * A) / R) * ELong * SinE,
+    Rfdot = math:sqrt(?EARTH_MU * A * max(1.0e-12, 1.0 - ELong * ELong)) / R,
 
     %% Argument of latitude u
-    U = Omegadf + Nu,
+    U = OmegaLong + Nu,
 
     %% Short-period perturbations (J2)
     Rk = R * (1.0 - 1.5 * ?EARTH_J2 * math:pow(?EARTH_RADIUS_KM / R, 2.0) * (3.0 * math:cos(Incl) * math:cos(Incl) - 1.0)),
