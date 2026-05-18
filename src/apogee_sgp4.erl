@@ -146,12 +146,16 @@ propagate_minutes(#sgp4_model{} = M, Tsince) ->
     Omegadf = M#sgp4_model.omega0 + M#sgp4_model.omegadot * Tsince,
     Raandf = M#sgp4_model.raan0 + M#sgp4_model.raandot * Tsince,
 
-    %% Drag perturbations
-    DeltaM = M#sgp4_model.t2cof * Tsince * Tsince,
+    %% Secular rates and drag perturbations
+    Tsince2 = Tsince * Tsince,
+    Tsince3 = Tsince2 * Tsince,
+    DeltaM = M#sgp4_model.t2cof * Tsince2 + M#sgp4_model.c1 * 0.5 * Tsince3 * 1.0e-5,
     Mp = Mdf + DeltaM,
     MpMod = Mp - ?TWO_PI * math:floor(Mp / ?TWO_PI),
     
-    A = M#sgp4_model.a0 * math:pow(1.0 - M#sgp4_model.c1 * Tsince, 2.0 / 3.0),
+    %% Semi-major axis and eccentricity secular decay from B* atmospheric drag
+    DecayFactor = max(0.1, 1.0 - M#sgp4_model.c1 * Tsince - M#sgp4_model.t2cof * Tsince2 * 1.0e-5),
+    A = M#sgp4_model.a0 * math:pow(DecayFactor, 2.0 / 3.0),
     E = max(1.0e-6, min(0.999, M#sgp4_model.e0 - M#sgp4_model.bstar * M#sgp4_model.c4 * Tsince)),
     Incl = M#sgp4_model.i0,
 
