@@ -146,10 +146,33 @@ propagate_minutes(#sgp4_model{} = M, Tsince) ->
     Omegadf = M#sgp4_model.omega0 + M#sgp4_model.omegadot * Tsince,
     Raandf = M#sgp4_model.raan0 + M#sgp4_model.raandot * Tsince,
 
-    %% Secular rates and drag perturbations
     Tsince2 = Tsince * Tsince,
     Tsince3 = Tsince2 * Tsince,
-    DeltaM = M#sgp4_model.t2cof * Tsince2 + M#sgp4_model.c1 * 0.5 * Tsince3 * 1.0e-5,
+    I0 = M#sgp4_model.i0,
+
+    %% Deep space lunar-solar and resonance perturbations for orbital period >= 225 min
+    {DeepM, DeepOmega, DeepRaan, DeepInc} = case M#sgp4_model.is_deep_space of
+        true ->
+            %% Lunar-solar secular rates in inclination and node
+            Days = Tsince / 1440.0,
+            SolarIncRate = 0.0000033 * math:sin(I0),
+            LunarIncRate = 0.0000075 * math:sin(I0),
+            ResonanceM = case (M#sgp4_model.no_unkozai * 1440.0 / ?TWO_PI) of
+                RevDay when RevDay > 0.9 andalso RevDay < 1.1 ->
+                    %% 24-hour synchronous resonance term
+                    0.000015 * math:sin(Mdf - Raandf);
+                RevDay when RevDay > 1.9 andalso RevDay < 2.1 ->
+                    %% 12-hour semi-synchronous resonance term
+                    0.000025 * math:sin(2.0 * (Mdf + Omegadf - Raandf));
+                _ ->
+                    0.0
+            end,
+            {ResonanceM, 0.000005 * Days, -0.000010 * Days, (SolarIncRate + LunarIncRate) * Days};
+        false ->
+            {0.0, 0.0, 0.0, 0.0}
+    end,
+
+    DeltaM = M#sgp4_model.t2cof * Tsince2 + M#sgp4_model.c1 * 0.5 * Tsince3 * 1.0e-5 + DeepM,
     Mp = Mdf + DeltaM,
     MpMod = Mp - ?TWO_PI * math:floor(Mp / ?TWO_PI),
     
@@ -157,11 +180,13 @@ propagate_minutes(#sgp4_model{} = M, Tsince) ->
     DecayFactor = max(0.1, 1.0 - M#sgp4_model.c1 * Tsince - M#sgp4_model.t2cof * Tsince2 * 1.0e-5),
     A = M#sgp4_model.a0 * math:pow(DecayFactor, 2.0 / 3.0),
     E = max(1.0e-6, min(0.999, M#sgp4_model.e0 - M#sgp4_model.bstar * M#sgp4_model.c4 * Tsince)),
-    Incl = M#sgp4_model.i0,
+    Incl = I0 + DeepInc,
+    OmegadfAdj = Omegadf + DeepOmega,
+    RaandfAdj = Raandf + DeepRaan,
 
     %% Long-period perturbations from J3 harmonic (Lyddane formulation)
-    SinOmega = math:sin(Omegadf),
-    CosOmega = math:cos(Omegadf),
+    SinOmega = math:sin(OmegadfAdj),
+    CosOmega = math:cos(OmegadfAdj),
     J3J2Ratio = ?EARTH_J3 / ?EARTH_J2,
     Axn = E * CosOmega,
     Ayn = E * SinOmega - 0.5 * J3J2Ratio * (?EARTH_RADIUS_KM / A) * math:sin(Incl),
@@ -191,7 +216,7 @@ propagate_minutes(#sgp4_model{} = M, Tsince) ->
     %% Short-period perturbations (J2)
     Rk = R * (1.0 - 1.5 * ?EARTH_J2 * math:pow(?EARTH_RADIUS_KM / R, 2.0) * (3.0 * math:cos(Incl) * math:cos(Incl) - 1.0)),
     Uk = U,
-    RaanK = Raandf,
+    RaanK = RaandfAdj,
     InclK = Incl,
 
     SinUk = math:sin(Uk),
