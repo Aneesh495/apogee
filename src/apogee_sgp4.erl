@@ -14,6 +14,7 @@
     propagate/2,
     propagate_minutes/2,
     propagate_jd/2,
+    trajectory/4,
     solve_kepler/2,
     init_elements/1
 ]).
@@ -138,6 +139,21 @@ propagate(#sgp4_model{} = Model, TargetJD) ->
 -spec propagate_jd(#tle{} | #sgp4_model{}, float()) -> #orbit_state{}.
 propagate_jd(Target, JD) ->
     propagate(Target, JD).
+
+-spec trajectory(#tle{} | #sgp4_model{}, float(), float(), number()) -> [#orbit_state{}].
+trajectory(Target, StartJD, EndJD, StepSeconds) ->
+    Model = case Target of
+        #tle{} -> init_elements(Target);
+        #sgp4_model{} -> Target
+    end,
+    StepDays = float(StepSeconds) / 86400.0,
+    trajectory_loop(Model, StartJD, EndJD, StepDays, []).
+
+trajectory_loop(_Model, CurrentJD, EndJD, _StepDays, Acc) when CurrentJD > EndJD ->
+    lists:reverse(Acc);
+trajectory_loop(Model, CurrentJD, EndJD, StepDays, Acc) ->
+    State = propagate(Model, CurrentJD),
+    trajectory_loop(Model, CurrentJD + StepDays, EndJD, StepDays, [State | Acc]).
 
 -spec propagate_minutes(#sgp4_model{}, float()) -> #orbit_state{}.
 propagate_minutes(#sgp4_model{} = M, Tsince) ->

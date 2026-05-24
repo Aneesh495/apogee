@@ -42,3 +42,16 @@ kepler_solver_test() ->
     %% Check Kepler relation: M = E - e*sin(E)
     MCalc = Eanom - 0.1 * math:sin(Eanom),
     ?assert(abs(MCalc - 0.5) < 1.0e-9).
+
+trajectory_test() ->
+    L1 = "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
+    L2 = "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
+    {ok, Tle} = apogee_tle:parse_lines("ISS (ZARYA)", L1, L2),
+    StartJD = apogee_tle:epoch_to_jd(Tle#tle.epoch_year, Tle#tle.epoch_day),
+    EndJD = StartJD + (1800.0 / 86400.0), % 30 minutes
+    States = apogee_sgp4:trajectory(Tle, StartJD, EndJD, 300.0), % 5-minute steps
+    ?assertEqual(7, length(States)),
+    lists:foreach(fun(State) ->
+        Norm = apogee_vec3:norm(State#orbit_state.pos),
+        ?assert(Norm > 6700.0 andalso Norm < 6850.0)
+    end, States).
