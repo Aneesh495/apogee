@@ -18,7 +18,10 @@
     wgs84_normal_radius/1,
     wgs84_meridional_radius/1,
     geodetic_to_ecef/1,
-    geodetic_to_ecef/3
+    geodetic_to_ecef/3,
+    geodetic_to_geocentric_lat/1,
+    geocentric_to_geodetic_lat/1,
+    earth_radius_at_lat/1
 ]).
 
 %% Earth angular rotation rate (rad/s)
@@ -113,3 +116,26 @@ geodetic_to_ecef(LatDeg, LonDeg, AltKm) ->
     Y = (N + H) * CosLat * SinLon,
     Z = (N * (1.0 - ?EARTH_ECCENTRICITY_SQ) + H) * SinLat,
     apogee_vec3:new(X, Y, Z).
+
+-spec geodetic_to_geocentric_lat(number()) -> float().
+geodetic_to_geocentric_lat(GeodeticLatDeg) ->
+    LatRad = float(GeodeticLatDeg) * ?DEG_TO_RAD,
+    TanPhiC = (1.0 - ?EARTH_ECCENTRICITY_SQ) * math:tan(LatRad),
+    math:atan(TanPhiC) * ?RAD_TO_DEG.
+
+-spec geocentric_to_geodetic_lat(number()) -> float().
+geocentric_to_geodetic_lat(GeocentricLatDeg) ->
+    LatRad = float(GeocentricLatDeg) * ?DEG_TO_RAD,
+    TanPhi = math:tan(LatRad) / (1.0 - ?EARTH_ECCENTRICITY_SQ),
+    math:atan(TanPhi) * ?RAD_TO_DEG.
+
+-spec earth_radius_at_lat(number()) -> float().
+earth_radius_at_lat(LatDeg) ->
+    LatRad = float(LatDeg) * ?DEG_TO_RAD,
+    A = ?EARTH_RADIUS_KM,
+    B = ?EARTH_SEMI_MINOR_KM,
+    CosL = math:cos(LatRad),
+    SinL = math:sin(LatRad),
+    Num = (A * A * CosL) * (A * A * CosL) + (B * B * SinL) * (B * B * SinL),
+    Den = (A * CosL) * (A * CosL) + (B * SinL) * (B * SinL),
+    math:sqrt(Num / Den).

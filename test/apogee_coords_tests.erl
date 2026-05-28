@@ -35,3 +35,12 @@ wgs84_equator_radius_test() ->
     ?assert(abs(P0#vector3.x - ?EARTH_RADIUS_KM) < 1.0e-6),
     ?assert(abs(P0#vector3.y) < 1.0e-6),
     ?assert(abs(P0#vector3.z) < 1.0e-6).
+
+latitude_conversion_test() ->
+    GeoLat = 45.0,
+    CenLat = apogee_coords:geodetic_to_geocentric_lat(GeoLat),
+    GeoRec = apogee_coords:geocentric_to_geodetic_lat(CenLat),
+    ?assert(abs(GeoLat - GeoRec) < 1.0e-6),
+    ?assert(CenLat < GeoLat),
+    R45 = apogee_coords:earth_radius_at_lat(45.0),
+    ?assert(R45 < ?EARTH_RADIUS_KM andalso R45 > ?EARTH_SEMI_MINOR_KM).
