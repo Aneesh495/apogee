@@ -17,7 +17,8 @@
     ground_look_angles/2,
     is_above_elevation_mask/3,
     range_rate_km_s/2,
-    doppler_shift_hz/4
+    doppler_shift_hz/4,
+    antenna_slew_rates/2
 ]).
 
 -define(A, ?EARTH_RADIUS_KM).
@@ -114,3 +115,31 @@ doppler_shift_hz(CarrierFreqHz, #orbit_state{} = SatStateEcef, #vector3{} = Stat
     RangeRate = range_rate_km_s(SatStateEcef, StationEcef),
     %% Delta f = - f0 * (range_rate / c)
     - float(CarrierFreqHz) * (RangeRate / ?SPEED_OF_LIGHT_KM_S).
+
+-spec antenna_slew_rates(#geodetic{}, #orbit_state{}) -> #{azimuth_rate_deg_s := float(), elevation_rate_deg_s := float()}.
+antenna_slew_rates(#geodetic{} = StationGeo, #orbit_state{pos = SatEcef, vel = SatVelEcef}) ->
+    #vector3{x = E, y = N, z = U} = ecef_to_enu(StationGeo, SatEcef),
+
+    LatRad = float(StationGeo#geodetic.lat) * ?DEG_TO_RAD,
+    LonRad = float(StationGeo#geodetic.lon) * ?DEG_TO_RAD,
+    SinLat = math:sin(LatRad),
+    CosLat = math:cos(LatRad),
+    SinLon = math:sin(LonRad),
+    CosLon = math:cos(LonRad),
+
+    %% Transform velocity to ENU
+    Edot = -SinLon * SatVelEcef#vector3.x + CosLon * SatVelEcef#vector3.y,
+    Ndot = -SinLat * CosLon * SatVelEcef#vector3.x - SinLat * SinLon * SatVelEcef#vector3.y + CosLat * SatVelEcef#vector3.z,
+    Udot = CosLat * CosLon * SatVelEcef#vector3.x + CosLat * SinLon * SatVelEcef#vector3.y + SinLat * SatVelEcef#vector3.z,
+
+    H2 = max(1.0e-9, E * E + N * N),
+    H = math:sqrt(H2),
+    R2 = max(1.0e-9, H2 + U * U),
+
+    AzRateRad = (N * Edot - E * Ndot) / H2,
+    ElRateRad = (H * Udot - U * (E * Edot + N * Ndot) / H) / R2,
+
+    #{
+        azimuth_rate_deg_s => AzRateRad * ?RAD_TO_DEG,
+        elevation_rate_deg_s => ElRateRad * ?RAD_TO_DEG
+    }.
