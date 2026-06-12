@@ -175,4 +175,16 @@
     reserved_bytes = 0 :: non_neg_integer()
 }).
 
+-record(ground_pass, {
+    station_id = <<>> :: binary(),
+    sat_id = <<>> :: binary(),
+    aos_jd = 0.0 :: float(),
+    los_jd = 0.0 :: float(),
+    tca_jd = 0.0 :: float(),
+    duration_s = 0.0 :: float(),
+    max_elevation_deg = 0.0 :: float(),
+    min_range_km = 0.0 :: float(),
+    capacity_bytes = 0 :: non_neg_integer()
+}).
+
 -endif.
