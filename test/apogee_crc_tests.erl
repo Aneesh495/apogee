@@ -17,7 +17,8 @@ standard_vectors_test() ->
     ?assert(apogee_crc:verify_crc32(Data, 16#CBF43926)),
 
     %% CRC-32 Castagnoli (CRC-32C) test vector = 0xE3069283 (3808850563)
-    ?assertEqual(16#E3069283, apogee_crc:crc32_castagnoli(Data)).
+    ?assertEqual(16#E3069283, apogee_crc:crc32_castagnoli(Data)),
+    ?assert(apogee_crc:verify_crc32c(Data, 16#E3069283)).
 
 empty_vector_test() ->
     Empty = <<>>,

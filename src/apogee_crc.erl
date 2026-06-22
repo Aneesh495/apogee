@@ -14,7 +14,9 @@
     crc16_ibm/1,
     crc32_ieee/1,
     crc32_castagnoli/1,
-    verify_crc32/2
+    crc32_castagnoli_update/2,
+    verify_crc32/2,
+    verify_crc32c/2
 ]).
 
 %% CRC-16-CCITT: poly 0x1021, init 0xFFFF
@@ -69,6 +71,14 @@ crc32_ieee(Data) when is_binary(Data) ->
 -spec crc32_castagnoli(binary()) -> non_neg_integer().
 crc32_castagnoli(Data) when is_binary(Data) ->
     crc32_castagnoli_loop(Data, 16#FFFFFFFF) bxor 16#FFFFFFFF.
+
+-spec crc32_castagnoli_update(binary(), non_neg_integer()) -> non_neg_integer().
+crc32_castagnoli_update(Data, RunningCRC) when is_binary(Data) ->
+    crc32_castagnoli_loop(Data, RunningCRC bxor 16#FFFFFFFF) bxor 16#FFFFFFFF.
+
+-spec verify_crc32c(binary(), non_neg_integer()) -> boolean().
+verify_crc32c(Data, ExpectedCRC) ->
+    crc32_castagnoli(Data) =:= ExpectedCRC.
 
 crc32_castagnoli_loop(<<>>, CRC) ->
     CRC;
