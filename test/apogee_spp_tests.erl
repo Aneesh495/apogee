@@ -41,4 +41,10 @@ time_cds_roundtrip_test() ->
     CdsBin = apogee_spp:encode_time_cds(UnixMs),
     ?assertEqual(6, byte_size(CdsBin)),
     Decoded = apogee_spp:decode_time_cds(CdsBin),
-    ?assert(abs(Decoded - UnixMs) < 10).
+    ?assert(abs(Decoded - UnixMs) < 10),
+
+    PicoBin = apogee_spp:encode_time_cds_pico(UnixMs, 500000000),
+    ?assertEqual(8, byte_size(PicoBin)),
+    {RecMs, RecPico} = apogee_spp:decode_time_cds_pico(PicoBin),
+    ?assert(abs(RecMs - UnixMs) < 10),
+    ?assert(abs(RecPico - 500000000) < 50000).

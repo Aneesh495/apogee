@@ -19,6 +19,8 @@
     is_idle_packet/1,
     encode_time_cds/1,
     decode_time_cds/1,
+    encode_time_cds_pico/2,
+    decode_time_cds_pico/1,
     encode_time_cuc/1,
     decode_time_cuc/1
 ]).
@@ -139,6 +141,19 @@ decode_time_cds(<<Days:16/unsigned-big, MsOfDay:32/unsigned-big>>) ->
     JD = ?CCSDS_EPOCH_JD + Days + (MsOfDay / 86400000.0),
     UnixSec = apogee_time:jd_to_unix(JD),
     round(UnixSec * 1000.0).
+
+-spec encode_time_cds_pico(non_neg_integer(), non_neg_integer()) -> binary().
+encode_time_cds_pico(UnixMs, SubMsPico) ->
+    %% 8-octet CDS format: 16-bit Days + 32-bit Milliseconds + 16-bit sub-ms picoseconds (unit 15.2587 ps)
+    Cds6 = encode_time_cds(UnixMs),
+    SubMsUnits = (SubMsPico * 65535) div 1000000000,
+    << Cds6/binary, (SubMsUnits band 16#FFFF):16/unsigned-big >>.
+
+-spec decode_time_cds_pico(binary()) -> {non_neg_integer(), non_neg_integer()}.
+decode_time_cds_pico(<<Days:16/unsigned-big, MsOfDay:32/unsigned-big, SubMsUnits:16/unsigned-big>>) ->
+    UnixMs = decode_time_cds(<<Days:16/unsigned-big, MsOfDay:32/unsigned-big>>),
+    SubMsPico = (SubMsUnits * 1000000000) div 65535,
+    {UnixMs, SubMsPico}.
 
 -spec encode_time_cuc(non_neg_integer()) -> binary().
 encode_time_cuc(UnixMs) ->
