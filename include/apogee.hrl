@@ -175,6 +175,31 @@
     reserved_bytes = 0 :: non_neg_integer()
 }).
 
+-record(tc_frame, {
+    version = 0 :: 0..3,
+    bypass_flag = 0 :: 0 | 1,
+    control_cmd_flag = 0 :: 0 | 1,
+    scid = 0 :: 0..1023,
+    vcid = 0 :: 0..63,
+    frame_seq_num = 0 :: 0..255,
+    data = <<>> :: binary(),
+    fecf = 0 :: non_neg_integer()
+}).
+
+-record(clcw, {
+    version = 0 :: 0..3,
+    status_field = 0 :: 0..7,
+    cop_in_effect = 1 :: 0..3,
+    vcid = 0 :: 0..63,
+    no_rf = false :: boolean(),
+    no_bit_lock = false :: boolean(),
+    lockout = false :: boolean(),
+    wait = false :: boolean(),
+    retransmit = false :: boolean(),
+    farm_b_counter = 0 :: 0..3,
+    report_value = 0 :: 0..255
+}).
+
 -record(ground_pass, {
     station_id = <<>> :: binary(),
     sat_id = <<>> :: binary(),
