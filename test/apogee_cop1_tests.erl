@@ -54,4 +54,19 @@ farm1_lifecycle_test() ->
     ?assertEqual({accepted, {set_vr, 100}}, apogee_cop1:process_frame(Farm, SetVRCmd)),
     ?assertEqual({open, 100}, apogee_cop1:get_state(Farm)),
 
+    %% Enter WAIT state
+    ok = apogee_cop1:set_wait(Farm, true),
+    ?assertEqual({wait, 100}, apogee_cop1:get_state(Farm)),
+    CLCW_Wait = apogee_cop1:get_clcw(Farm),
+    ?assert(CLCW_Wait#clcw.wait),
+
+    %% Sequence frame rejected in wait state
+    F100 = apogee_tc:new_frame(0, 1, 0, 100, <<"WAIT_TEST">>),
+    ?assertEqual({rejected, wait_buffer_full}, apogee_cop1:process_frame(Farm, F100)),
+
+    %% Resume to OPEN state
+    ok = apogee_cop1:set_wait(Farm, false),
+    ?assertEqual({open, 100}, apogee_cop1:get_state(Farm)),
+    ?assertEqual({accepted, <<"WAIT_TEST">>}, apogee_cop1:process_frame(Farm, F100)),
+
     ok = apogee_cop1:stop(Farm).
