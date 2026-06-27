@@ -200,6 +200,19 @@
     report_value = 0 :: 0..255
 }).
 
+-record(tm_frame, {
+    version = 0 :: 0..3,
+    scid = 0 :: 0..1023,
+    vcid = 0 :: 0..7,
+    ocf_flag = 0 :: 0 | 1,
+    mcfc = 0 :: 0..255,
+    vcfc = 0 :: 0..255,
+    fhp = 0 :: 0..2047,
+    data = <<>> :: binary(),
+    clcw = undefined :: #clcw{} | undefined,
+    fecf = 0 :: non_neg_integer()
+}).
+
 -record(ground_pass, {
     station_id = <<>> :: binary(),
     sat_id = <<>> :: binary(),
