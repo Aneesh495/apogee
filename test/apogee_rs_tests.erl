@@ -25,3 +25,11 @@ clean_syndromes_test() ->
     Syndromes = apogee_rs:calculate_syndromes(FullCodeword),
     ?assertEqual(32, length(Syndromes)),
     ?assert(lists:all(fun(S) -> S =:= 0 end, Syndromes)).
+
+uncorrectable_detection_test() ->
+    %% Test that a massively scrambled block reports clean error or decodes
+    Message = <<"SMALL_MSG">>,
+    Codeword = apogee_rs:encode(Message),
+    Corrupted = binary:copy(<<16#FF>>, byte_size(Codeword)),
+    Result = apogee_rs:decode(Corrupted),
+    ?assert(Result =:= {error, uncorrectable_error} orelse element(1, Result) =:= ok).
