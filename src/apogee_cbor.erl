@@ -9,6 +9,8 @@
 
 -export([
     encode/1,
+    encode_indefinite_bytes/1,
+    encode_indefinite_text/1,
     decode/1,
     decode_one/1
 ]).
@@ -75,6 +77,16 @@ encode(Map) when is_map(Map) ->
     Hdr = encode_header(5, Len),
     Body = [<<K/binary, V/binary>> || {K, V} <- SortedPairs],
     iolist_to_binary([Hdr | Body]).
+
+-spec encode_indefinite_bytes([binary()]) -> binary().
+encode_indefinite_bytes(Chunks) ->
+    EncodedChunks = [encode(C) || C <- Chunks],
+    iolist_to_binary([<<16#5F>>, EncodedChunks, <<16#FF>>]).
+
+-spec encode_indefinite_text([string()]) -> binary().
+encode_indefinite_text(Chunks) ->
+    EncodedChunks = [encode(C) || C <- Chunks],
+    iolist_to_binary([<<16#7F>>, EncodedChunks, <<16#FF>>]).
 
 encode_header(MajorType, Val) when Val < 24 ->
     <<(MajorType bsl 5 bor Val):8>>;
