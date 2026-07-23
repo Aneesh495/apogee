@@ -175,32 +175,52 @@ parse_primary_and_blocks(PrimaryList, RemAfterPrimary) ->
     [Vsn, Flags, CRCType, DstCbor, SrcCbor, RptCbor, [CreationTime, SeqNum], Lifetime | RestPrimary] = PrimaryList,
     case Vsn =:= ?BPV7_VERSION of
         true ->
-            {ok, DstEid} = apogee_eid:decode_cbor(DstCbor),
-            {ok, SrcEid} = apogee_eid:decode_cbor(SrcCbor),
-            {ok, RptEid} = apogee_eid:decode_cbor(RptCbor),
-
-            {FragOffset, TotalLen} = case (Flags band ?BPV7_FLAG_IS_FRAGMENT) =/= 0 of
-                true when length(RestPrimary) >= 2 ->
-                    [Offset, Tot | _] = RestPrimary,
-                    {Offset, Tot};
-                _ ->
-                    {0, 0}
+            %% Verify CRC if present
+            CRCValid = case {CRCType, lists:reverse(RestPrimary)} of
+                {?BPV7_CR_NONE, _} -> true;
+                {_, [ExpectedCRC | FieldsRev]} ->
+                    %% Reconstruct data for CRC check
+                    CheckList = [Vsn, Flags, CRCType, DstCbor, SrcCbor, RptCbor, [CreationTime, SeqNum], Lifetime] ++ lists:reverse(FieldsRev),
+                    EncodedCheck = iolist_to_binary([apogee_cbor:encode(F) || F <- CheckList]),
+                    case CRCType of
+                        ?BPV7_CR_CRC16 -> apogee_crc:crc16_ccitt(EncodedCheck) =:= ExpectedCRC;
+                        ?BPV7_CR_CRC32 -> apogee_crc:crc32_castagnoli(EncodedCheck) =:= ExpectedCRC;
+                        _ -> true
+                    end;
+                _ -> true
             end,
 
-            Bundle0 = #bpv7_bundle{
-                version = Vsn,
-                flags = Flags,
-                crc_type = CRCType,
-                destination = apogee_eid:format(DstEid),
-                source = apogee_eid:format(SrcEid),
-                report_to = apogee_eid:format(RptEid),
-                creation_time = CreationTime,
-                sequence_number = SeqNum,
-                lifetime_ms = Lifetime,
-                fragment_offset = FragOffset,
-                total_app_data_len = TotalLen
-            },
-            decode_canonical_blocks(RemAfterPrimary, Bundle0);
+            case CRCValid of
+                true ->
+                    {ok, DstEid} = apogee_eid:decode_cbor(DstCbor),
+                    {ok, SrcEid} = apogee_eid:decode_cbor(SrcCbor),
+                    {ok, RptEid} = apogee_eid:decode_cbor(RptCbor),
+
+                    {FragOffset, TotalLen} = case (Flags band ?BPV7_FLAG_IS_FRAGMENT) =/= 0 of
+                        true when length(RestPrimary) >= 2 ->
+                            [Offset, Tot | _] = RestPrimary,
+                            {Offset, Tot};
+                        _ ->
+                            {0, 0}
+                    end,
+
+                    Bundle0 = #bpv7_bundle{
+                        version = Vsn,
+                        flags = Flags,
+                        crc_type = CRCType,
+                        destination = apogee_eid:format(DstEid),
+                        source = apogee_eid:format(SrcEid),
+                        report_to = apogee_eid:format(RptEid),
+                        creation_time = CreationTime,
+                        sequence_number = SeqNum,
+                        lifetime_ms = Lifetime,
+                        fragment_offset = FragOffset,
+                        total_app_data_len = TotalLen
+                    },
+                    decode_canonical_blocks(RemAfterPrimary, Bundle0);
+                false ->
+                    {error, primary_block_crc_mismatch}
+            end;
         false ->
             {error, {unsupported_bpv7_version, Vsn}}
     end.
