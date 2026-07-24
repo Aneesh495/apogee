@@ -42,3 +42,11 @@ report_flags_test() ->
     ?assert(apogee_bpv7:has_flag(Bundle1, ?BPV7_FLAG_REQ_RECEPTION_RPT)),
     ?assert(apogee_bpv7:has_flag(Bundle1, ?BPV7_FLAG_REQ_DELIVERY_RPT)),
     ?assertNot(apogee_bpv7:has_flag(Bundle1, ?BPV7_FLAG_REQ_FORWARD_RPT)).
+
+corrupt_bundle_crc_test() ->
+    Bundle = apogee_bpv7:new_bundle("ipn:1.1", "ipn:2.2", 10000, <<"TEST_CRC">>),
+    Encoded = apogee_bpv7:encode(Bundle),
+    <<Head:10/binary, Byte:8, Tail/binary>> = Encoded,
+    Corrupted = <<Head/binary, (Byte bxor 16#FF):8, Tail/binary>>,
+    Result = apogee_bpv7:decode(Corrupted),
+    ?assert(Result =:= {error, primary_block_crc_mismatch} orelse element(1, Result) =:= error).
