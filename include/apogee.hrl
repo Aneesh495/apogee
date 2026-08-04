@@ -225,4 +225,14 @@
     capacity_bytes = 0 :: non_neg_integer()
 }).
 
+-record(cgr_route, {
+    from_node = <<>> :: binary(),
+    to_node = <<>> :: binary(),
+    hops = [] :: [#contact{}],
+    tx_start_time = 0.0 :: float(),
+    arrival_time = 0.0 :: float(),
+    total_bytes = 0 :: non_neg_integer(),
+    path_confidence = 1.0 :: float()
+}).
+
 -endif.
