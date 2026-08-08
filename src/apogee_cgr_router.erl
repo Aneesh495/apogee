@@ -18,6 +18,8 @@
     add_contact/2,
     route_bundle/2,
     report_link_failure/2,
+    restore_contact/2,
+    degrade_confidence/3,
     get_contact_plan/1,
     get_k_routes/5,
     stop/1
@@ -58,6 +60,12 @@ route_bundle(Server, Bundle) ->
 
 report_link_failure(Server, ContactId) ->
     gen_server:call(Server, {report_link_failure, ContactId}).
+
+restore_contact(Server, ContactId) ->
+    gen_server:call(Server, {restore_contact, ContactId}).
+
+degrade_confidence(Server, ContactId, Factor) ->
+    gen_server:call(Server, {degrade_confidence, ContactId, Factor}).
 
 get_contact_plan(Server) ->
     gen_server:call(Server, get_contact_plan).
@@ -118,6 +126,22 @@ handle_call({route_bundle, #bpv7_bundle{} = Bundle}, _From, State) ->
 handle_call({report_link_failure, ContactId}, _From, State) ->
     NewFailed = [ContactId | lists:delete(ContactId, State#state.failed_contacts)],
     {reply, ok, State#state{failed_contacts = NewFailed}};
+
+handle_call({restore_contact, ContactId}, _From, State) ->
+    NewFailed = lists:delete(ContactId, State#state.failed_contacts),
+    {reply, ok, State#state{failed_contacts = NewFailed}};
+
+handle_call({degrade_confidence, ContactId, Factor}, _From, State) ->
+    CP = State#state.contact_plan,
+    Contacts = apogee_contact_plan:get_contacts(CP),
+    UpdatedCP = case lists:keyfind(ContactId, #contact.id, Contacts) of
+        #contact{} = C ->
+            NewConf = max(0.0, min(1.0, C#contact.confidence * Factor)),
+            apogee_contact_plan:add_contact(CP, C#contact{confidence = NewConf});
+        false ->
+            CP
+    end,
+    {reply, ok, State#state{contact_plan = UpdatedCP}};
 
 handle_call(get_contact_plan, _From, State) ->
     {reply, State#state.contact_plan, State};
