@@ -15,7 +15,8 @@
     is_null/1,
     ipn/2,
     dtn/2,
-    matches/2
+    matches/2,
+    node_binary/1
 ]).
 
 -record(eid, {
@@ -114,6 +115,21 @@ matches(#eid{scheme = Scheme, node = N1, service = S1}, #eid{scheme = Scheme, no
     NodeMatch andalso ServiceMatch;
 matches(_, _) ->
     false.
+
+-spec node_binary(eid() | binary() | string()) -> binary().
+node_binary(#eid{scheme = ipn, node = Node}) ->
+    integer_to_binary(Node);
+node_binary(#eid{scheme = dtn, node = Node}) ->
+    to_binary(Node);
+node_binary(#eid{scheme = none}) ->
+    <<>>;
+node_binary(Bin) when is_binary(Bin) ->
+    case parse(Bin) of
+        {ok, Eid} -> node_binary(Eid);
+        _ -> Bin
+    end;
+node_binary(List) when is_list(List) ->
+    node_binary(list_to_binary(List)).
 
 to_binary(B) when is_binary(B) -> B;
 to_binary(L) when is_list(L) -> list_to_binary(L).

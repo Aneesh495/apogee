@@ -18,6 +18,7 @@
     jd_to_unix/1,
     now_jd/0,
     now_unix_ms/0,
+    now_seconds/0,
     gmst/1,
     gast/1,
     gast/2,
@@ -105,6 +106,10 @@ now_jd() ->
 -spec now_unix_ms() -> non_neg_integer().
 now_unix_ms() ->
     erlang:system_time(millisecond).
+
+-spec now_seconds() -> float().
+now_seconds() ->
+    erlang:system_time(millisecond) / 1000.0.
 
 -spec gmst(float()) -> float().
 gmst(JD) ->

@@ -215,14 +215,7 @@ reserve_hops(CP, [#contact{id = Id} | Rest], Size) ->
     end.
 
 extract_node(Eid) ->
-    case apogee_eid:parse(Eid) of
-        {ok, {ipn, NodeNum, _Service}} ->
-            integer_to_binary(NodeNum);
-        {ok, {dtn, Path}} ->
-            Path;
-        _ ->
-            Eid
-    end.
+    apogee_eid:node_binary(Eid).
 
 to_bin(B) when is_binary(B) -> B;
 to_bin(L) when is_list(L) -> list_to_binary(L).
