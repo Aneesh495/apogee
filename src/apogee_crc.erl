@@ -12,6 +12,7 @@
     crc16_ccitt/2,
     verify_crc16_ccitt/2,
     crc16_ibm/1,
+    crc32/1,
     crc32_ieee/1,
     crc32_castagnoli/1,
     crc32_castagnoli_update/2,
@@ -61,6 +62,10 @@ update_bits(X, Acc, BitsLeft) ->
         0 ->
             update_bits(X bsr 1, Acc bsr 1, BitsLeft - 1)
     end.
+
+-spec crc32(binary()) -> non_neg_integer().
+crc32(Data) when is_binary(Data) ->
+    crc32_ieee(Data).
 
 %% CRC-32-IEEE: poly 0x04C11DB7, reversed 0xEDB88320, init 0xFFFFFFFF, xorout 0xFFFFFFFF
 -spec crc32_ieee(binary()) -> non_neg_integer().
