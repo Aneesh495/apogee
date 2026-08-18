@@ -74,7 +74,15 @@ encode(#bpv7_bundle{} = B) ->
 encode_primary_block(#bpv7_bundle{} = B) ->
     {ok, SrcEid} = apogee_eid:parse(B#bpv7_bundle.source),
     {ok, DstEid} = apogee_eid:parse(B#bpv7_bundle.destination),
-    {ok, RptEid} = apogee_eid:parse(B#bpv7_bundle.report_to),
+    RptEid = case B#bpv7_bundle.report_to of
+        <<>> -> apogee_eid:null_eid();
+        undefined -> apogee_eid:null_eid();
+        RptStr ->
+            case apogee_eid:parse(RptStr) of
+                {ok, E} -> E;
+                _ -> apogee_eid:null_eid()
+            end
+    end,
 
     SrcCbor = apogee_eid:encode_cbor(SrcEid),
     DstCbor = apogee_eid:encode_cbor(DstEid),
