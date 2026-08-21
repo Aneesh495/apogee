@@ -64,3 +64,18 @@ battery_charge_and_load_shedding_test() ->
     % In critical mode, next step request should shed down to 8.0W
     {_EPS4, ShedLoad} = apogee_eps:step_power(EPS3, 0.0, 100.0, 10.0),
     ?assertEqual(8.0, ShedLoad).
+
+battery_health_and_temperature_test() ->
+    EPS0 = apogee_eps:new([{battery_capacity_wh, 100.0}, {battery_soc, 0.80}]),
+    ?assert(abs(apogee_eps:depth_of_discharge(EPS0) - 0.20) < 1.0e-4),
+    
+    % Normal temp: 100 Wh effective
+    ?assertEqual(100.0, apogee_eps:effective_capacity(EPS0, 20.0)),
+    % Cold temp 0C: derated by 0.5% per deg below 20C (10% derate -> 90 Wh)
+    ?assertEqual(90.0, apogee_eps:effective_capacity(EPS0, 0.0)),
+
+    % Accumulate cycle count
+    {EPS1, _} = apogee_eps:step_power(EPS0, 0.0, 50.0, 3600.0),
+    % 50 Wh drained on 100 Wh battery = 0.25 equivalent full cycles
+    ?assert(abs(apogee_eps:accumulated_cycles(EPS1) - 0.25) < 1.0e-3).
+

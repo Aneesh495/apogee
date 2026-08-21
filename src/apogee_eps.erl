@@ -21,7 +21,11 @@
     step_power/4,
     power_mode/1,
     battery_soc/1,
-    bus_voltage/1
+    bus_voltage/1,
+    depth_of_discharge/1,
+    effective_capacity/2,
+    accumulated_cycles/1,
+    set_temperature/2
 ]).
 
 -define(SUN_RADIUS_KM, 696340.0).
@@ -123,17 +127,36 @@ step_power(#eps_state{} = EPS, SolarPowerW, RequestedLoadW, DeltaSec) ->
     NewSoc = NewEnergyWh / CapacityWh,
     NewMode = determine_mode(NewSoc),
     NewVoltage = soc_to_voltage(NewSoc),
+    CycleIncrement = abs(EnergyDeltaWh) / (2.0 * CapacityWh),
 
     UpdatedEPS = EPS#eps_state{
         battery_soc = NewSoc,
         bus_voltage = NewVoltage,
-        mode = NewMode
+        mode = NewMode,
+        battery_cycles = EPS#eps_state.battery_cycles + CycleIncrement
     },
     {UpdatedEPS, ActualLoadW}.
 
 -spec power_mode(eps_state()) -> normal | degraded | critical.
 power_mode(#eps_state{mode = M}) ->
     M.
+
+-spec depth_of_discharge(eps_state()) -> float().
+depth_of_discharge(#eps_state{battery_soc = Soc}) ->
+    max(0.0, 1.0 - Soc).
+
+-spec effective_capacity(eps_state(), float()) -> float().
+effective_capacity(#eps_state{battery_capacity_wh = NomCap}, TempC) ->
+    Derate = 0.005 * max(0.0, 20.0 - TempC),
+    max(0.0, NomCap * (1.0 - Derate)).
+
+-spec accumulated_cycles(eps_state()) -> float().
+accumulated_cycles(#eps_state{battery_cycles = Cycles}) ->
+    Cycles.
+
+-spec set_temperature(eps_state(), float()) -> eps_state().
+set_temperature(#eps_state{} = EPS, TempC) ->
+    EPS#eps_state{temperature_c = float(TempC)}.
 
 %%====================================================================
 %% Internal Helpers
