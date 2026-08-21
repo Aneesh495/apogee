@@ -235,4 +235,13 @@
     path_confidence = 1.0 :: float()
 }).
 
+-record(eps_state, {
+    battery_capacity_wh = 120.0 :: float(),
+    battery_soc = 1.0 :: float(),
+    bus_voltage = 28.0 :: float(),
+    solar_array_area_m2 = 0.25 :: float(),
+    solar_array_normal = #vector3{x = 0.0, y = 0.0, z = 1.0} :: #vector3{},
+    mode = normal :: normal | degraded | critical
+}).
+
 -endif.

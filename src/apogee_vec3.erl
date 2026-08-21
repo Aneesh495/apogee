@@ -20,6 +20,7 @@
     cross/2,
     norm_sq/1,
     norm/1,
+    magnitude/1,
     normalize/1,
     distance/2,
     distance_sq/2,
@@ -82,6 +83,10 @@ norm_sq(#vector3{x = X, y = Y, z = Z}) ->
 -spec norm(#vector3{}) -> float().
 norm(V) ->
     math:sqrt(norm_sq(V)).
+
+-spec magnitude(#vector3{}) -> float().
+magnitude(V) ->
+    norm(V).
 
 -spec normalize(#vector3{}) -> #vector3{}.
 normalize(V) ->
