@@ -246,4 +246,11 @@
     temperature_c = 20.0 :: float()
 }).
 
+-record(thermal_state, {
+    temp_solar_array_k = 293.15 :: float(),
+    temp_payload_k = 293.15 :: float(),
+    temp_avionics_k = 293.15 :: float(),
+    temp_battery_k = 293.15 :: float()
+}).
+
 -endif.
