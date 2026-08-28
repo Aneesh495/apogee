@@ -253,4 +253,13 @@
     temp_battery_k = 293.15 :: float()
 }).
 
+-record(adcs_state, {
+    attitude = #quaternion{} :: #quaternion{},
+    angular_velocity = #vector3{} :: #vector3{},
+    wheel_momentum = #vector3{} :: #vector3{},
+    wheel_speed_rpm = #vector3{} :: #vector3{},
+    inertia = #vector3{x = 0.05, y = 0.05, z = 0.02} :: #vector3{},
+    mode = detumble :: detumble | sun_pointing | nadir_pointing | slew | safe_hold
+}).
+
 -endif.
