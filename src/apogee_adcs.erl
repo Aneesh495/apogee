@@ -24,7 +24,9 @@
     b_dot_detumble/2,
     desaturate_reaction_wheels/2,
     pointing_error/2,
-    pd_attitude_control/5
+    pd_attitude_control/5,
+    tilted_dipole_b_field/2,
+    desaturate_if_needed/3
 ]).
 
 %% Reaction wheel physical constants
@@ -215,6 +217,43 @@ pd_attitude_control(#quaternion{} = QCurrent, #quaternion{} = QTarget, #vector3{
     },
     TauD = apogee_vec3:scale(Omega, -Kd),
     apogee_vec3:add(TauP, TauD).
+
+-spec desaturate_if_needed(adcs_state(), #vector3{}, float()) -> {boolean(), #vector3{}, adcs_state()}.
+desaturate_if_needed(#adcs_state{} = S, #vector3{} = BFieldBody, ThresholdNmS) ->
+    HwNorm = apogee_vec3:norm(S#adcs_state.wheel_momentum),
+    case HwNorm > ThresholdNmS of
+        true ->
+            {TauMag, UpdatedS} = desaturate_reaction_wheels(S, BFieldBody),
+            {true, TauMag, UpdatedS};
+        false ->
+            {false, #vector3{x = 0.0, y = 0.0, z = 0.0}, S}
+    end.
+
+-spec tilted_dipole_b_field(#vector3{}, float()) -> #vector3{}.
+tilted_dipole_b_field(#vector3{} = SatPos, GMST) ->
+    %% Dipole axis tilted by 11.5 degrees (~0.2007 rad) towards 70W longitude
+    Tilt = 0.2007,
+    LambdaMag = -70.0 * ?DEG_TO_RAD + GMST,
+    M_hat = #vector3{
+        x = math:sin(Tilt) * math:cos(LambdaMag),
+        y = math:sin(Tilt) * math:sin(LambdaMag),
+        z = -math:cos(Tilt)
+    },
+    M_vec = apogee_vec3:scale(M_hat, ?EARTH_MAGNETIC_MOMENT),
+    R = apogee_vec3:norm(SatPos) * 1000.0,
+    case R < 1.0e5 of
+        true ->
+            #vector3{x = 0.0, y = 0.0, z = 0.0};
+        false ->
+            R_hat = apogee_vec3:scale(SatPos, 1000.0 / R),
+            M_dot_R = apogee_vec3:dot(M_vec, R_hat),
+            R3 = R * R * R,
+            Factor = 1.0e-7 / R3,
+            B_x = Factor * (3.0 * M_dot_R * R_hat#vector3.x - M_vec#vector3.x),
+            B_y = Factor * (3.0 * M_dot_R * R_hat#vector3.y - M_vec#vector3.y),
+            B_z = Factor * (3.0 * M_dot_R * R_hat#vector3.z - M_vec#vector3.z),
+            #vector3{x = B_x, y = B_y, z = B_z}
+    end.
 
 %%====================================================================
 %% Internal Helpers

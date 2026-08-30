@@ -63,3 +63,24 @@ geomagnetic_field_and_desaturation_test() ->
     H_before = apogee_vec3:norm(S_sat#adcs_state.wheel_momentum),
     H_after = apogee_vec3:norm(S_desat#adcs_state.wheel_momentum),
     ?assert(H_after < H_before).
+
+tilted_dipole_and_desaturate_if_needed_test() ->
+    SatPos = #vector3{x = 6800.0, y = 1000.0, z = 500.0},
+    GMST = 1.25,
+    BTilted = apogee_adcs:tilted_dipole_b_field(SatPos, GMST),
+    ?assert(apogee_vec3:norm(BTilted) > 1.0e-5),
+
+    % Below threshold: no desaturation triggered
+    S0 = apogee_adcs:new(),
+    S_low = S0#adcs_state{wheel_momentum = #vector3{x = 0.001, y = 0.0, z = 0.0}},
+    {Fired1, _Tau1, S_low_res} = apogee_adcs:desaturate_if_needed(S_low, BTilted, 0.01),
+    ?assertNot(Fired1),
+    ?assertEqual(S_low#adcs_state.wheel_momentum, S_low_res#adcs_state.wheel_momentum),
+
+    % Above threshold: desaturation triggered
+    S_high = S0#adcs_state{wheel_momentum = #vector3{x = 0.05, y = 0.05, z = 0.05}},
+    {Fired2, Tau2, S_high_res} = apogee_adcs:desaturate_if_needed(S_high, BTilted, 0.01),
+    ?assert(Fired2),
+    ?assert(apogee_vec3:norm(Tau2) > 0.0),
+    ?assert(apogee_vec3:norm(S_high_res#adcs_state.wheel_momentum) < apogee_vec3:norm(S_high#adcs_state.wheel_momentum)).
+
