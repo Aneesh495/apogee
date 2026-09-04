@@ -262,4 +262,19 @@
     mode = detumble :: detumble | sun_pointing | nadir_pointing | slew | safe_hold
 }).
 
+-record(multispectral_frame, {
+    frame_id = 0 :: non_neg_integer(),
+    timestamp = 0 :: non_neg_integer(),
+    target_lat = 0.0 :: float(),
+    target_lon = 0.0 :: float(),
+    alt_km = 500.0 :: float(),
+    blue = 0.15 :: float(),
+    green = 0.20 :: float(),
+    red = 0.10 :: float(),
+    nir = 0.60 :: float(),
+    swir = 0.25 :: float(),
+    tir_k = 295.0 :: float(),
+    cloud_fraction = 0.05 :: float()
+}).
+
 -endif.
