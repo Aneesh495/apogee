@@ -277,4 +277,15 @@
     cloud_fraction = 0.05 :: float()
 }).
 
+-record(sdr_config, {
+    rf_band = s_band :: s_band | ka_band,
+    freq_mhz = 2200.0 :: float(),
+    tx_power_dbw = 10.0 :: float(),
+    tx_antenna_gain_dbi = 6.0 :: float(),
+    rx_antenna_gain_dbi = 35.0 :: float(),
+    rx_system_temp_k = 150.0 :: float(),
+    pointing_loss_db = 0.5 :: float(),
+    req_eb_n0_db = 4.5 :: float()
+}).
+
 -endif.
