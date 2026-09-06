@@ -10,6 +10,7 @@
 
 -export([
     parse/1,
+    parse/2,
     parse_lines/2,
     parse_lines/3,
     checksum/1,
@@ -36,6 +37,10 @@ parse(String) when is_list(String) ->
         _ ->
             {error, invalid_tle_format}
     end.
+
+-spec parse(string(), string()) -> {ok, #tle{}} | {error, term()}.
+parse(Line1, Line2) ->
+    parse_lines(Line1, Line2).
 
 -spec parse_lines(string(), string()) -> {ok, #tle{}} | {error, term()}.
 parse_lines(Line1, Line2) ->

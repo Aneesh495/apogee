@@ -21,6 +21,7 @@
     mult/2,
     rotate_vec/2,
     to_mat3/1,
+    to_matrix/1,
     from_mat3/1,
     slerp/3,
     angular_derivative/2
@@ -144,6 +145,10 @@ to_mat3(Q) ->
         2.0 * (XY + WZ),       1.0 - 2.0 * (XX + ZZ), 2.0 * (YZ - WX),
         2.0 * (XZ - WY),       2.0 * (YZ + WX),       1.0 - 2.0 * (XX + YY)
     ).
+
+-spec to_matrix(#quaternion{}) -> #matrix3{}.
+to_matrix(Q) ->
+    to_mat3(Q).
 
 -spec from_mat3(#matrix3{}) -> #quaternion{}.
 from_mat3(#matrix3{r11 = R11, r12 = R12, r13 = R13,
