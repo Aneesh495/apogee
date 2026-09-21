@@ -288,4 +288,15 @@
     req_eb_n0_db = 4.5 :: float()
 }).
 
+-record(ground_station, {
+    id = <<>> :: binary(),
+    name = <<>> :: binary(),
+    location = #geodetic{} :: #geodetic{},
+    min_elevation_deg = 5.0 :: float(),
+    dish_diameter_m = 11.0 :: float(),
+    tx_power_dbw = 30.0 :: float(),
+    rf_band = s_band :: s_band | ka_band,
+    max_bitrate_bps = 50000000.0 :: float()
+}).
+
 -endif.
