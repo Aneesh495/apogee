@@ -299,4 +299,12 @@
     max_bitrate_bps = 50000000.0 :: float()
 }).
 
+-record(walker_config, {
+    total_sats = 24 :: pos_integer(),
+    planes = 4 :: pos_integer(),
+    phasing = 1 :: non_neg_integer(),
+    altitude_km = 550.0 :: float(),
+    inclination_deg = 53.0 :: float()
+}).
+
 -endif.
