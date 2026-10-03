@@ -12,4 +12,5 @@ ts/node_modules/
 ts/dist/
 __pycache__/
 *.pyc
+*.svg
 .DS_Store
