@@ -170,13 +170,18 @@ encode_canonical_block(BlockType, BlockNum, BlockFlags, DataBytes, CRCType) ->
 
 -spec decode(binary()) -> {ok, #bpv7_bundle{}, binary()} | {error, term()}.
 decode(Binary) ->
-    case apogee_cbor:decode(Binary) of
-        {ok, PrimaryList, RemAfterPrimary} when is_list(PrimaryList), length(PrimaryList) >= 8 ->
-            parse_primary_and_blocks(PrimaryList, RemAfterPrimary);
-        {error, Reason} ->
-            {error, {cbor_decode_failed, Reason}};
-        _ ->
-            {error, invalid_primary_block}
+    try
+        case apogee_cbor:decode(Binary) of
+            {ok, PrimaryList, RemAfterPrimary} when is_list(PrimaryList), length(PrimaryList) >= 8 ->
+                parse_primary_and_blocks(PrimaryList, RemAfterPrimary);
+            {error, Reason} ->
+                {error, {cbor_decode_failed, Reason}};
+            _ ->
+                {error, invalid_primary_block}
+        end
+    catch
+        _:_ ->
+            {error, malformed_bundle}
     end.
 
 parse_primary_and_blocks(PrimaryList, RemAfterPrimary) ->
