@@ -1,0 +1,16 @@
+{
+  "name": "@apogee/client",
+  "version": "1.0.0",
+  "description": "Typed DTN BPv7 and CCSDS Telemetry Client for Apogee Kernel",
+  "author": "Aneesh Krishna",
+  "license": "MIT",
+  "main": "dist/apogee_client.js",
+  "types": "dist/apogee_client.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node dist/apogee_client.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
